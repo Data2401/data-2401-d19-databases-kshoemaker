@@ -1,0 +1,137 @@
+---
+title: "RNotes - RSQL"
+author: "Dr. Shoemaker"
+date: "DATA 2401"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message = F}
+#install.packages("dbplyr") ## run once per machine
+library(DBI) ## in every relevant script
+library(dplyr)  ## in every relevant script
+library(dbplyr)  ## in every relevant script
+
+#### for a SQLite database 
+#install.packages("RSQLite") ## once per machine
+library(RSQLite) ## in every relevant script
+
+### for a postgres database
+#install.packages("RPostgreSQL")  ## once per machine
+library(RPostgreSQL) ## in every relevant script
+```
+
+# Create a connection to the database
+ 
+```{r}
+db_connection <- dbConnect(SQLite(), dbname = "Chinook_Sqlite.sqlite")
+```
+
+In your environment, there is now  something there of the class "SQLiteConnection"!
+
+
+Dont forget to disconnect at the end of the script! 
+```{r}
+dbDisconnect(db_connection)
+```
+
+
+
+# Work with the database 
+
+So, let's work with the Database. 
+```{r}
+# reconnect
+db_connection <- dbConnect(SQLite(), dbname = "Chinook_Sqlite.sqlite") # reconnect
+```
+
+The function dbListTables() gives a .... list of the tables. shocking. 
+
+```{r}
+dbListTables(db_connection)
+
+```
+
+To reference a table, we need to create a *reference* to the table as a variable. This uses the function `tbl`
+
+```{r}
+## give the connection to the database, then the name of the table you want AS A STRING
+Album_table <- tbl(db_connection,'Album')
+
+## print out the table reference 
+print(Album_table)
+```
+
+
+Let's do the same for the album table, and query just the Alanis Morissette albums
+
+```{r}
+## reference the "album" table
+
+
+```
+
+```{r}
+## her artist ID is 4, so we reference that using dplyr and filter! JUST like a dataframe
+
+```
+
+What's going on here? - `dbplyr` is automatically translating what you're asking into SQL! 
+
+You can see the SQL commands by using `show_query`
+
+```{r}
+
+
+```
+
+ IMPORTANT: The object AM_albums_query is NOT the data. It's a "lazy evaluation" of the query.  Querying the data is less computationally heavy then actually going to get it, so this lets you test out the statements you're making before you do it "for real"
+
+Look above how it's called a "lazy query"
+
+
+To actually get the data in a format you can use, use `collect()`
+
+-  this command tells R to actually go "collect" the data you've queried for, to actually do the query. 
+
+```{r}
+## collect the data from our Alanis query
+
+
+```
+
+
+
+## Exercises
+
+1. Use `dplyr` on our databases to list, then count the number of Employees referenced in the database.
+
+
+2. Use `join` to add the artists to their respective albums. 
+
+
+3. What 5 artists have the most tracks? 
+
+
+4. Which countries have the most total invoices ordered from highest to lowest?
+
+
+5. Who is the top-spending customer overall, and what is their total purchase amount?
+
+
+# Farmers Market Data
+
+Disconnect from the chinook database, and connect to the `farmers_market.sqlite` provided in the repository.
+
+Answer the following questions: 
+
+1. What is the name of the category that has the highest variety of different products? 
+
+2. Which customers have spent a lifetime total of more than $50 at the market, sorted by their last names
+
+Don't forget that the schema drawing is available in the repository! 
