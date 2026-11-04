@@ -57,7 +57,9 @@ dbListTables(db_connection)
 
 ```
 
-To reference a table, we need to create a *reference* to the table as a variable. This uses the function `tbl`
+To reference a table, we need to create a *reference* to the table as a variable. This uses the function `tbl`.
+
+Do this for the table named "Artist":
 
 ```{r}
 ## give the connection to the database, then the name of the table you want AS A STRING
@@ -77,7 +79,7 @@ Album_table
 ```
 
 ```{r}
-## her artist ID is 4, so we reference that using dplyr and filter! JUST like a dataframe
+## we could see in the artist table that her artist ID is 4, so we reference that using dplyr and filter! JUST like a dataframe
 
 Album_table |> filter(ArtistId == 4)
 
@@ -88,8 +90,10 @@ What's going on here? - `dbplyr` is automatically translating what you're asking
 You can see the SQL commands by using `show_query`
 
 ```{r}
+# save the query as an object
 AM_query <- Album_table |> filter(ArtistId == 4)
 
+# pass that object to show_query()
 show_query(AM_query)
 ```
 
@@ -147,27 +151,29 @@ Track_table |>
 4. Which countries have the most total invoices ordered from highest to lowest? Plot the bar chart.
 
 ```{r}
-dbListTables(db_connection) ## give us the tables
-dbListFields(db_connection, "Invoice") ## give us the columns in a specific table
+dbListTables(db_connection) ## lists the tables
+dbListFields(db_connection, "Invoice") ## lists the columns in a specific table
 
 Invoice_table <- tbl(db_connection, "Invoice")
-show_query(Invoice_table |> count(BillingCountry) |> arrange(-n))
+Invoice_table |> count(BillingCountry) |> arrange(-n) ## results
+show_query(Invoice_table |> count(BillingCountry) |> arrange(-n)) ## showing the SQL to get there
 
-library(tidyverse)
+library(tidyverse) # loading the library we need to plot
+
 Invoice_table |> 
   count(BillingCountry) |> 
-  arrange(-n) -> invoice_by_country
-invoice_by_country
-
-invoice_by_country |> 
+  arrange(-n) |> 
   ggplot(aes(y = reorder(BillingCountry, n), x = n)) + geom_col()
 ```
 
 5. Who is the top-spending customer overall, and what is their total purchase amount?
 
 ```{r}
-dbListFields(db_connection, "Invoice") ## give us the columns in a specific table
+
+dbListFields(db_connection, "Invoice") ## lists the columns in a specific table
 dbListFields(db_connection, "Customer")
+## just here to help/remind whats in the different tables
+
 
 Customer_table <- tbl(db_connection, "Customer")
 
@@ -179,14 +185,3 @@ Invoice_table |>
 ```
 
 
-# Farmers Market Data
-
-Disconnect from the chinook database, and connect to the `farmers_market.sqlite` provided in the repository.
-
-Answer the following questions: 
-
-1. What is the name of the category that has the highest variety of different products? 
-
-2. Which customers have spent a lifetime total of more than $50 at the market, sorted by their last names
-
-Don't forget that the schema drawing is available in the repository! 
