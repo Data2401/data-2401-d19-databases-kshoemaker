@@ -23,7 +23,7 @@ library(RSQLite) ## in every relevant script
 
 ### for a postgres database
 #install.packages("RPostgreSQL")  ## once per machine
-library(RPostgreSQL) ## in every relevant script
+# library(RPostgreSQL) ## in every relevant script
 ```
 
 # Create a connection to the database
@@ -61,10 +61,10 @@ To reference a table, we need to create a *reference* to the table as a variable
 
 ```{r}
 ## give the connection to the database, then the name of the table you want AS A STRING
-Album_table <- tbl(db_connection,'Album')
+Artist_table <- tbl(db_connection,'Artist')
 
 ## print out the table reference 
-print(Album_table)
+print(Artist_table)
 ```
 
 
@@ -72,12 +72,14 @@ Let's do the same for the album table, and query just the Alanis Morissette albu
 
 ```{r}
 ## reference the "album" table
-
-
+Album_table <- tbl(db_connection, "Album")
+Album_table
 ```
 
 ```{r}
 ## her artist ID is 4, so we reference that using dplyr and filter! JUST like a dataframe
+
+Album_table |> filter(ArtistId == 4)
 
 ```
 
@@ -86,11 +88,12 @@ What's going on here? - `dbplyr` is automatically translating what you're asking
 You can see the SQL commands by using `show_query`
 
 ```{r}
+AM_query <- Album_table |> filter(ArtistId == 4)
 
-
+show_query(AM_query)
 ```
 
- IMPORTANT: The object AM_albums_query is NOT the data. It's a "lazy evaluation" of the query.  Querying the data is less computationally heavy then actually going to get it, so this lets you test out the statements you're making before you do it "for real"
+IMPORTANT: The object AM_query is NOT the data. It's a "lazy evaluation" of the query.  Querying the data is less computationally heavy then actually going to get it, so this lets you test out the statements you're making before you do it "for real"
 
 Look above how it's called a "lazy query"
 
@@ -101,7 +104,7 @@ To actually get the data in a format you can use, use `collect()`
 
 ```{r}
 ## collect the data from our Alanis query
-
+AM_query_df <- collect(AM_query)
 
 ```
 
@@ -111,17 +114,69 @@ To actually get the data in a format you can use, use `collect()`
 
 1. Use `dplyr` on our databases to list, then count the number of Employees referenced in the database.
 
+```{r}
+Employ_table <- tbl(db_connection, "Employee") 
+Employ_table |> select(FirstName, LastName, everything())
+
+Employ_table |> count()
+
+## don't *need* to collect(). 
+```
 
 2. Use `join` to add the artists to their respective albums. 
 
+```{r}
+Album_artist_query <- Album_table |> left_join(Artist_table) |> select(Title, Name) 
+show_query(Album_artist_query)
+```
 
 3. What 5 artists have the most tracks? 
 
+```{r}
+Track_table <- tbl(db_connection, "Track")
 
-4. Which countries have the most total invoices ordered from highest to lowest?
+Track_table |> 
+  left_join(Album_table) |> 
+  left_join(Artist_table, join_by(ArtistId)) |> 
+  group_by(Name.y) |> 
+  summarise(num_songs = n()) |> 
+  slice_max(num_songs, n = 5)
 
+```
+
+4. Which countries have the most total invoices ordered from highest to lowest? Plot the bar chart.
+
+```{r}
+dbListTables(db_connection) ## give us the tables
+dbListFields(db_connection, "Invoice") ## give us the columns in a specific table
+
+Invoice_table <- tbl(db_connection, "Invoice")
+show_query(Invoice_table |> count(BillingCountry) |> arrange(-n))
+
+library(tidyverse)
+Invoice_table |> 
+  count(BillingCountry) |> 
+  arrange(-n) -> invoice_by_country
+invoice_by_country
+
+invoice_by_country |> 
+  ggplot(aes(y = reorder(BillingCountry, n), x = n)) + geom_col()
+```
 
 5. Who is the top-spending customer overall, and what is their total purchase amount?
+
+```{r}
+dbListFields(db_connection, "Invoice") ## give us the columns in a specific table
+dbListFields(db_connection, "Customer")
+
+Customer_table <- tbl(db_connection, "Customer")
+
+Invoice_table |> 
+  group_by(CustomerId) |> 
+  summarise(total_amount = sum(Total)) |>  
+  left_join(Customer_table, join_by(CustomerId)) |> 
+  arrange(-total_amount)
+```
 
 
 # Farmers Market Data
